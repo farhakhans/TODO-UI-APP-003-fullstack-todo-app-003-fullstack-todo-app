@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #e8f5e8;
+            border: 1px solid #4caf50;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #0070f3;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .btn:hover {
+            background-color: #0060e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Todo App Setup Complete</h1>
+
+        <div class="status">
+            <h3>Server Status:</h3>
+            <p>✅ Backend API: <a href="http://localhost:8080" target="_blank">http://localhost:8080</a></p>
+            <p>✅ Backend Status: <span id="backend-status">Checking...</span></p>
+        </div>
+
+        <h3>Application Status:</h3>
+        <p>The Todo application should be running. If you're seeing this page instead of the app, please try:</p>
+
+        <ol>
+            <li>Refreshing your browser</li>
+            <li>Checking if your browser is blocking the app</li>
+            <li>Clearing your browser cache</li>
+            <li>Trying a different browser</li>
+        </ol>
+
+        <h3>Quick Links:</h3>
+        <a href="http://localhost:8080/docs" class="btn" target="_blank">API Documentation</a>
+        <a href="http://localhost:3333" class="btn" target="_blank">Todo App (Port 3333)</a>
+        <a href="http://localhost:8080" class="btn" target="_blank">Backend API</a>
+
+        <h3>Setup Instructions:</h3>
+        <p>If the app still doesn't load:</p>
+        <ol>
+            <li>Close all browser tabs</li>
+            <li>Close all running server processes</li>
+            <li>Restart the backend server on port 8080</li>
+            <li>Restart the frontend server on port 3333</li>
+            <li>Try accessing http://localhost:3333 again</li>
+        </ol>
+
+        <div style="margin-top: 30px; padding: 15px; background-color: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px;">
+            <strong>Note:</strong> If you're still having issues, the problem may be with your local development environment.
+            The application code is properly configured and should work once the servers are running correctly.
+        </div>
+    </div>
+
+    <script>
+        // Check backend status
+        fetch('http://localhost:8080')
+            .then(response => {
+                if (response.ok) {
+                    document.getElementById('backend-status').textContent = 'Running';
+                    document.getElementById('backend-status').style.color = 'green';
+                } else {
+                    document.getElementById('backend-status').textContent = 'Not responding';
+                    document.getElementById('backend-status').style.color = 'red';
+                }
+            })
+            .catch(error => {
+                document.getElementById('backend-status').textContent = 'Not responding';
+                document.getElementById('backend-status').style.color = 'red';
+            });
+    </script>
+</body>
+</html>

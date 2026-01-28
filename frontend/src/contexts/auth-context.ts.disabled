@@ -1,0 +1,136 @@
+'use client';
+
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import apiClient from '../services/api-client';
+
+interface User {
+  id: string;
+  email: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  signup: (email: string, password: string) => Promise<void>;
+  signin: (email: string, password: string) => Promise<void>;
+  logout: () => void;
+  checkAuthStatus: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Define the provider component
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Define all functions first to avoid hoisting issues
+  const logout = async () => {
+    try {
+      await apiClient.logout();
+    } catch (error) {
+      // If logout fails on the server, still remove local token
+      console.error('Logout error:', error);
+    } finally {
+      setUser(null);
+      localStorage.removeItem('authToken');
+    }
+  };
+
+  const checkAuthStatus = () => {
+    if (typeof window === 'undefined') {
+      // Not in browser, can't access localStorage
+      setIsLoading(false);
+      return;
+    }
+
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      // In a real implementation, you might decode the JWT or make a request to verify the token
+      // For now, we'll just check if token exists
+      try {
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Auth status check error:', error);
+        // Remove invalid token
+        localStorage.removeItem('authToken');
+        setUser(null);
+        setIsLoading(false);
+      }
+    } else {
+      setIsLoading(false);
+    }
+  };
+
+  const signup = async (email: string, password: string) => {
+    if (typeof window === 'undefined') {
+      throw new Error('Signup can only be performed in the browser');
+    }
+
+    try {
+      const response = await apiClient.signup(email, password);
+      // Automatically sign in after successful signup
+      setUser(response.user);
+      localStorage.setItem('authToken', response.token);
+    } catch (error) {
+      console.error('Signup error:', error);
+      throw error;
+    }
+  };
+
+  const signin = async (email: string, password: string) => {
+    if (typeof window === 'undefined') {
+      throw new Error('Signin can only be performed in the browser');
+    }
+
+    try {
+      const response = await apiClient.signin(email, password);
+      setUser(response.user);
+      localStorage.setItem('authToken', response.token);
+    } catch (error) {
+      console.error('Signin error:', error);
+      throw error;
+    }
+  };
+
+  // Initialize auth status when component mounts
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      // Small delay to ensure DOM is ready
+      const init = setTimeout(() => {
+        checkAuthStatus();
+      }, 0);
+
+      return () => clearTimeout(init);
+    } else {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Create the context value
+  const contextValue: AuthContextType = {
+    user,
+    isAuthenticated: !!user && !isLoading,
+    isLoading,
+    signup,
+    signin,
+    logout,
+    checkAuthStatus
+  };
+
+  return (
+    <AuthContext.Provider value={contextValue}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
