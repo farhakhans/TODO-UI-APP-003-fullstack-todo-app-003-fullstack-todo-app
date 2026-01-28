@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
 
     # CORS settings
-    BACKEND_CORS_ORIGINS: str = os.getenv("BACKEND_CORS_ORIGINS", "*")
+    BACKEND_CORS_ORIGINS: str = os.getenv("BACKEND_CORS_ORIGINS", "")
 
     # Neon-specific settings
     NEON_DATABASE_URL: Optional[str] = os.getenv("NEON_DATABASE_URL")

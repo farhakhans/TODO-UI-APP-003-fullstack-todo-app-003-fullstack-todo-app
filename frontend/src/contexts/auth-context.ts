@@ -94,6 +94,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
       console.log('Starting signup process with email:', email);
+      console.log('API URL being used:', process.env.NEXT_PUBLIC_API_URL);
       const response = await apiClient.signup(email, password);
       console.log('Signup API response:', response);
 
@@ -108,6 +109,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('Signup successful, user set and stored');
     } catch (error) {
       console.error('Signup error:', error);
+      // Log the specific error message for debugging
+      if (error instanceof Error) {
+        console.error('Signup error message:', error.message);
+      }
       throw error;
     } finally {
       // Ensure loading is set to false after signup attempt
@@ -123,6 +128,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     try {
       console.log('Starting signin process with email:', email);
+      console.log('API URL being used:', process.env.NEXT_PUBLIC_API_URL);
       const response = await apiClient.signin(email, password);
       console.log('Signin API response:', response);
 
@@ -136,6 +142,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('Signin successful, user set and stored');
     } catch (error) {
       console.error('Signin error:', error);
+      // Log the specific error message for debugging
+      if (error instanceof Error) {
+        console.error('Signin error message:', error.message);
+      }
       throw error;
     } finally {
       // Ensure loading is set to false after signin attempt

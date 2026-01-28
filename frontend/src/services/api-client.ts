@@ -6,15 +6,11 @@ class ApiClient {
   constructor() {
     // Initialize the axios instance with base configuration
     // Use environment variable for API URL, fallback to localhost:8080
-    const baseURL = typeof window !== 'undefined'
-      ? window.location.hostname === 'localhost'
-        ? process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
-        : '' // Use relative URLs in production
-      : process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'; // Default for server-side rendering
+    const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 
     this.client = axios.create({
       baseURL,
-      timeout: 10000,
+      timeout: 30000, // Increased timeout to 30 seconds for slower connections
       headers: {
         'Content-Type': 'application/json',
       },
@@ -32,22 +28,50 @@ class ApiClient {
           if (token) {
             // Ensure the Authorization header is properly formatted
             config.headers.Authorization = `Bearer ${token}`;
+            console.log('Added authorization token to request');
+          } else {
+            console.log('No auth token found for request to:', config.url);
           }
+        } else {
+          console.log('Skipping auth token for auth endpoint:', config.url);
         }
         return config;
       },
       (error) => {
+        console.error('Request interceptor error:', error);
         return Promise.reject(error);
       }
     );
 
     // Add response interceptor to handle errors globally
     this.client.interceptors.response.use(
-      (response) => response,
-      (error) => {
+      (response) => {
+        console.log('API Response:', response);
+        return response;
+      },
+      async (error) => {
+        console.error('API Error:', error);
+
+        // Check if it's a network error
+        if (!error.response) {
+          console.error('Network error occurred:', error.message || error);
+
+          // For network errors, provide a more user-friendly message
+          if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+            // Check if the API URL is properly configured
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+            console.error(`Network error connecting to API: ${apiUrl}`);
+
+            // Throw a more descriptive error
+            throw new Error(`Network error: Unable to connect to the server. Please check that your backend is running and the API URL is correctly configured.`);
+          }
+        }
+
         if (error.response?.status === 401) {
           // Token might be expired, remove token
+          console.log('Received 401 error, clearing auth token');
           localStorage.removeItem('authToken');
+          localStorage.removeItem('authUser');
           // Note: Actual navigation should be handled by the calling component
         }
         return Promise.reject(error);
@@ -58,37 +82,49 @@ class ApiClient {
   // Authentication endpoints
   async signup(email: string, password: string) {
     try {
+      console.log('Sending signup request to:', `${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`);
       const response = await this.client.post('/api/auth/signup', {
         email,
         password,
       });
 
+      console.log('Signup response received:', response.data);
+
       // Store the token in localStorage for authentication
       if (response.data.token) {
         localStorage.setItem('authToken', response.data.token);
+        console.log('Token stored in localStorage');
       }
 
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.detail || 'Signup failed');
+      console.error('Signup error:', error);
+      const errorMessage = error.response?.data?.error || error.response?.data?.detail || error.message || 'Signup failed';
+      throw new Error(errorMessage);
     }
   }
 
   async signin(email: string, password: string) {
     try {
+      console.log('Sending signin request to:', `${process.env.NEXT_PUBLIC_API_URL}/api/auth/signin`);
       const response = await this.client.post('/api/auth/signin', {
         email,
         password,
       });
 
+      console.log('Signin response received:', response.data);
+
       // Store the token in localStorage for authentication
       if (response.data.token) {
         localStorage.setItem('authToken', response.data.token);
+        console.log('Token stored in localStorage');
       }
 
       return response.data;
     } catch (error: any) {
-      throw new Error(error.response?.data?.detail || 'Signin failed');
+      console.error('Signin error:', error);
+      const errorMessage = error.response?.data?.detail || error.message || 'Signin failed';
+      throw new Error(errorMessage);
     }
   }
 
